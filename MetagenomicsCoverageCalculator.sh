@@ -1,4 +1,24 @@
 #!/bin/bash
+threads=1
+memory="1G"  # Default values
+
+while getopts ":m:p:o:t:r:" opt; do
+    case $opt in
+        m) mapping_file="$OPTARG"
+        ;;
+        p) path_file="$OPTARG"
+        ;;
+        o) output_file="$OPTARG"
+        ;;
+        t) threads="$OPTARG"
+        ;;
+        r) memory="$OPTARG"
+        ;;
+        \?) echo "Invalid option -$OPTARG" >&2
+        ;;
+    esac
+done
+
 
 # Check dependencies
 if ! command -v bowtie2 &> /dev/null; then
@@ -32,4 +52,5 @@ if [[ ! -f "$mapping_file" ]] || [[ ! -f "$path_file" ]]; then
 fi
 
 # Pass arguments to the core script
-./core_coverage_calculation.sh "$mapping_file" "$path_file" "$output_file"
+./core_coverage_calculation.sh "$mapping_file" "$path_file" "$output_file" "$threads" "$memory"
+

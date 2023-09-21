@@ -4,6 +4,12 @@
 mapping_file="$1"
 path_file="$2"
 output_file="$3"
+threads="$4"
+memory="$5"  # in format like "2G" for 2 gigabytes
+
+# Default values in case they are not provided
+threads=${threads:-1}
+memory=${memory:-1G}
 
 # Read paths from path-file.txt
 while IFS= read -r line; do
@@ -39,13 +45,13 @@ while IFS=$'\t' read -r mag forward reverse; do
         bowtie2-build "$mags_path/$mag" "$mags_path/$mag"
     fi
 
-    # Align reads to the MAG using Bowtie2
-    bowtie2 -x "$mags_path/$mag" -1 "$reads_path/$forward" -2 "$reads_path/$reverse" -S "$sam_file"
+    # Align reads to the MAG using Bowtie2 with provided thread count
+    bowtie2 -x "$mags_path/$mag" -1 "$reads_path/$forward" -2 "$reads_path/$reverse" -S "$sam_file" -p "$threads"
 
-    # Convert SAM to BAM, sort BAM, and compute coverage
-    samtools view -bS "$sam_file" > "$bam_file"
-    samtools sort "$bam_file" -o "$sorted_bam_file"
-    coverage=$(samtools depth "$sorted_bam_file" | awk '{sum+=$3} END {print sum/NR}')
+    # Convert SAM to BAM, sort BAM, and compute coverage with provided memory configuration
+    samtools view -@ "$threads" -bS "$sam_file" > "$bam_file"
+    samtools sort -@ "$threads" -m "$memory" "$bam_file" -o "$sorted_bam_file"
+    coverage=$(samtools depth -@ "$threads" "$sorted_bam_file" | awk '{sum+=$3} END {print sum/NR}')
 
     # Append to output file
     echo "$mag $coverage" >> "$output_file"
